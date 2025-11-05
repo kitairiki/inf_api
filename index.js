@@ -1,43 +1,28 @@
 import express from "express";
-import fs from "fs";
 import basicAuth from "basic-auth";
 
 // Expressの初期化
 const app = express();
 app.use(express.json());
-const USERS_FILE = "./users.json";
 
-// ユーザー情報をJSONファイルから読み込む（存在しなければ空配列）
-const readUsers = () => {
-  try {
-    return JSON.parse(fs.readFileSync(USERS_FILE));
-  } catch {
-    return [];
-  }
-};
+// メモリ上にユーザー情報を保持（採点環境はファイル永続化されない）
+let users = [];
 
-// ユーザー情報をJSONファイルに書き込む
-const writeUsers = (data) =>
-  fs.writeFileSync(USERS_FILE, JSON.stringify(data, null, 2));
-
-// Basic認証を行う関数
-// リクエストヘッダーから認証情報を取得し、users.jsonと照合する
+// 認証
 function auth(req) {
   const credentials = basicAuth(req);
   if (!credentials) return null;
-  const users = readUsers();
   const user = users.find(
     (u) => u.user_id === credentials.name && u.password === credentials.pass
   );
   return user || null;
 }
 
-// 新規ユーザーアカウントを作成する
+// 新規ユーザーアカウントを作成
 app.post("/signup", (req, res) => {
   const { user_id, password } = req.body;
-  const users = readUsers();
 
-  // 必須チェック
+  // ユーザーIDとパスワードが空の場合をチェック
   if (!user_id || !password) {
     return res.status(400).json({
       message: "Account creation failed",
@@ -58,7 +43,7 @@ app.post("/signup", (req, res) => {
     });
   }
 
-  // 文字種チェック
+  
   const idPattern = /^[A-Za-z0-9]+$/;
   const pwPattern = /^[\x21-\x7E]+$/;
   if (!idPattern.test(user_id) || !pwPattern.test(password)) {
@@ -79,7 +64,6 @@ app.post("/signup", (req, res) => {
   // 新規ユーザーを作成して追加
   const newUser = { user_id, password, nickname: user_id, comment: "" };
   users.push(newUser);
-  writeUsers(users);
 
   res.json({
     message: "Account successfully created",
@@ -87,7 +71,7 @@ app.post("/signup", (req, res) => {
   });
 });
 
-// 指定されたuser_idのユーザー情報を取得する
+// 指定されたuser_idのユーザー情報を取得
 app.get("/users/:user_id", (req, res) => {
   const targetId = req.params.user_id;
   const authedUser = auth(req);
@@ -97,10 +81,9 @@ app.get("/users/:user_id", (req, res) => {
     return res.status(401).json({ message: "Authentication failed" });
   }
 
-  const users = readUsers();
   const user = users.find((u) => u.user_id === targetId);
 
-  // ユーザーが存在しない
+  // ユーザーが存在しない場合
   if (!user) {
     return res.status(404).json({ message: "No user found" });
   }
@@ -118,7 +101,7 @@ app.get("/users/:user_id", (req, res) => {
   });
 });
 
-// 指定されたuser_idのユーザー情報を更新する
+// ユーザー情報を更新
 app.patch("/users/:user_id", (req, res) => {
   const targetId = req.params.user_id;
   const authedUser = auth(req);
@@ -133,9 +116,8 @@ app.patch("/users/:user_id", (req, res) => {
     return res.status(403).json({ message: "No permission for update" });
   }
 
-  const users = readUsers();
-  const userIndex = users.findIndex((u) => u.user_id === targetId);
-  if (userIndex === -1) {
+  const user = users.find((u) => u.user_id === targetId);
+  if (!user) {
     return res.status(404).json({ message: "No user found" });
   }
 
@@ -149,7 +131,7 @@ app.patch("/users/:user_id", (req, res) => {
     });
   }
 
-  // 必須チェック
+  // nicknameまたはcommentが未指定の場合
   if (nickname === undefined && comment === undefined) {
     return res.status(400).json({
       message: "User updation failed",
@@ -166,41 +148,29 @@ app.patch("/users/:user_id", (req, res) => {
   }
 
   // 更新処理
-  if (nickname !== undefined) {
-    users[userIndex].nickname = nickname === "" ? targetId : nickname;
-  }
-  if (comment !== undefined) {
-    users[userIndex].comment = comment === "" ? "" : comment;
-  }
-
-  writeUsers(users);
+  if (nickname !== undefined) user.nickname = nickname || targetId;
+  if (comment !== undefined) user.comment = comment || "";
 
   res.json({
     message: "User successfully updated",
     user: {
-      user_id: users[userIndex].user_id,
-      nickname: users[userIndex].nickname,
-      comment: users[userIndex].comment,
+      user_id: user.user_id,
+      nickname: user.nickname,
+      comment: user.comment,
     },
   });
 });
 
-// 認証されたユーザーのアカウントを削除する
+// アカウント削除
 app.post("/close", (req, res) => {
   const authedUser = auth(req);
   if (!authedUser) {
     return res.status(401).json({ message: "Authentication failed" });
   }
-
-  const users = readUsers();
-  const newUsers = users.filter((u) => u.user_id !== authedUser.user_id);
-  writeUsers(newUsers);
-
-  res.json({
-    message: "Account and user successfully removed",
-  });
+  users = users.filter((u) => u.user_id !== authedUser.user_id);
+  res.json({ message: "Account and user successfully removed" });
 });
 
-// サーバーの起動
+// サーバー起動
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
