@@ -5,8 +5,17 @@ import basicAuth from "basic-auth";
 const app = express();
 app.use(express.json());
 
+
 // メモリ上にユーザー情報を保持（採点環境はファイル永続化されない）
-let users = [];
+// 初期ユーザー情報（TaroYamada）
+let users = [
+  {
+    user_id: "TaroYamada",
+    password: "PASSwd4TY",
+    nickname: "TaroYamada",
+    comment: "",
+  },
+];
 
 // 認証
 function auth(req) {
@@ -43,7 +52,6 @@ app.post("/signup", (req, res) => {
     });
   }
 
-  
   const idPattern = /^[A-Za-z0-9]+$/;
   const pwPattern = /^[\x21-\x7E]+$/;
   if (!idPattern.test(user_id) || !pwPattern.test(password)) {
