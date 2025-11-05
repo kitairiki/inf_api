@@ -198,4 +198,6 @@ app.post("/close", (req, res) => {
 
 // サーバー起動
 const PORT = process.env.PORT || 3000;
+ensureTestUser(); // 初期ユーザーを確実に登録
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
