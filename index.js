@@ -5,7 +5,6 @@ import basicAuth from "basic-auth";
 const app = express();
 app.use(express.json());
 
-
 // メモリ上にユーザー情報を保持（採点環境はファイル永続化されない）
 // 初期ユーザー情報（TaroYamada）
 let users = [
@@ -96,15 +95,12 @@ app.get("/users/:user_id", (req, res) => {
     return res.status(404).json({ message: "No user found" });
   }
 
-  const nickname = user.nickname || user.user_id;
-  const comment = user.comment || "";
-
   res.json({
     message: "User details by user_id",
     user: {
       user_id: user.user_id,
-      nickname,
-      ...(comment ? { comment } : {}),
+      nickname: user.nickname,
+      ...(user.comment ? { comment: user.comment } : {}),
     },
   });
 });
