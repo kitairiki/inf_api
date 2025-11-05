@@ -7,8 +7,14 @@ const app = express();
 app.use(express.json());
 const USERS_FILE = "./users.json";
 
-// ユーザー情報をJSONファイルから読み込む
-const readUsers = () => JSON.parse(fs.readFileSync(USERS_FILE));
+// ユーザー情報をJSONファイルから読み込む（存在しなければ空配列）
+const readUsers = () => {
+  try {
+    return JSON.parse(fs.readFileSync(USERS_FILE));
+  } catch {
+    return [];
+  }
+};
 
 // ユーザー情報をJSONファイルに書き込む
 const writeUsers = (data) =>
@@ -196,6 +202,5 @@ app.post("/close", (req, res) => {
 });
 
 // サーバーの起動
-app.listen(process.env.PORT || 3000, () =>
-  console.log("Server running on port 3000")
-);
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
