@@ -13,9 +13,9 @@ function ensureTestUser() {
   if (!users.find((u) => u.user_id === "TaroYamada")) {
     users.push({
       user_id: "TaroYamada",
-      password: "PASSwd4TY",
-      nickname: "TaroYamada",
-      comment: "",
+      password: "PaSSwd4TY",
+      nickname: "たろー",
+      comment: "僕は元気です",
     });
   }
 }
@@ -200,4 +200,3 @@ app.post("/close", (req, res) => {
 const PORT = process.env.PORT || 3000;
 ensureTestUser(); // 初期ユーザーを確実に登録
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
