@@ -28,7 +28,8 @@ function getAuthCredentials(req) {
     if (header && header.startsWith("Basic ")) {
       const base64 = header.replace("Basic ", "").trim();
       const decoded = Buffer.from(base64, "base64").toString();
-      const [name, pass] = decoded.split(":");
+      const [name, passRaw] = decoded.split(":");
+      const pass = passRaw ? passRaw.trim() : "";
       credentials = { name, pass };
     }
   }
