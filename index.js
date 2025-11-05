@@ -20,10 +20,25 @@ function ensureTestUser() {
   }
 }
 
+// Authorizationヘッダー対応
+function getAuthCredentials(req) {
+  let credentials = basicAuth(req);
+  if (!credentials) {
+    const header = req.headers["authorization"] || req.headers["Authorization"];
+    if (header && header.startsWith("Basic ")) {
+      const base64 = header.replace("Basic ", "").trim();
+      const decoded = Buffer.from(base64, "base64").toString();
+      const [name, pass] = decoded.split(":");
+      credentials = { name, pass };
+    }
+  }
+  return credentials;
+}
+
 // 認証
 function auth(req) {
   ensureTestUser(); // 毎回テストユーザーを補充
-  const credentials = basicAuth(req);
+  const credentials = getAuthCredentials(req);
   if (!credentials) return null;
   const user = users.find(
     (u) => u.user_id === credentials.name && u.password === credentials.pass
