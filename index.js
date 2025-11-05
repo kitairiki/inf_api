@@ -112,7 +112,6 @@ app.get("/users/:user_id", (req, res) => {
   });
 });
 
-
 // 指定されたuser_idのユーザー情報を更新する
 app.patch("/users/:user_id", (req, res) => {
   const targetId = req.params.user_id;
@@ -197,4 +196,6 @@ app.post("/close", (req, res) => {
 });
 
 // サーバーの起動
-app.listen(3000, () => console.log("Server running on port 3000"));
+app.listen(process.env.PORT || 3000, () =>
+  console.log("Server running on port 3000")
+);
